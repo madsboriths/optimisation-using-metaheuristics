@@ -57,8 +57,9 @@ tables = zeros(Int, inst.T, inst.S)
 partners = inst.partner
 
 function main()
-    currentTable = mod(1, inst.T)
+    currentTable = 0
     for i in eachindex(partners)
+        currentTable = mod(currentTable, inst.T)+1
         if (partners[i] != 0)
             seatGuest(partners[i],currentTable)
             seatGuest(partners[partners[i]],currentTable)
