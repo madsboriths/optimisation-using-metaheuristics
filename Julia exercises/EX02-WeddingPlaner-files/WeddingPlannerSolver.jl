@@ -52,9 +52,32 @@ function readInstance(filename)
 
 end
 
+inst = readInstance("EX02-WeddingPlaner-files/WeddingData_100_10_50_40.dat")
+tables = zeros(Int, inst.T, inst.S)
+partners = inst.partner
+
 function main()
-    inst = readInstance("Week01/WeddingData_100_10_50_40.dat")
-    println(inst.G)
+    currentTable = mod(1, inst.T)
+    for i in eachindex(partners)
+        if (partners[i] != 0)
+            seatGuest(partners[i],currentTable)
+            seatGuest(partners[partners[i]],currentTable)
+            currentTable = currentTable + 1
+            partners[partners[i]] = 0
+            partners[i] = 0
+        end
+    end
+    println(partners)
+    println(string("\n", tables))
+end
+
+function seatGuest(G, T)
+    for i in 1:inst.S
+        if (tables[T,i] == 0) 
+            tables[T,i] = G
+            break
+        end
+    end
 end
 
 main()
