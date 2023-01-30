@@ -51,10 +51,35 @@ function getDistanceMatrix(coord::Array{Float32,2},dim::Int32)
 end
 
 function main()
-    name, coord, dim = readInstance("tsp_toy.tsp")
+    name, coord, dim = readInstance("EX01-TSP/tsp_fun.tsp")
     println(name)
     dist = getDistanceMatrix(coord,dim)
-    println(dist)
+
+    visited = zeros(Int,1)
+    visited[1] = 1
+
+    nextNode = 1
+    while(size(visited)[1] < dim)
+        shortDist, nextNode = checkNeighbors(nextNode, visited, dist, dim)
+        append!(visited,nextNode)
+    end
+    append!(visited,1)
+
+    println(string("Final travel itenary: ", visited))
+end
+
+function checkNeighbors(ID, visited, dist, dim)
+    max = maximum(dist)+1
+    currentList = zeros(dim)
+
+    for i in eachindex(currentList)
+        if i in visited
+            currentList[i] = max
+        else
+            currentList[i] = dist[ID,i]
+        end 
+    end
+    return findmin(currentList)
 end
 
 main()
