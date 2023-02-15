@@ -50,8 +50,9 @@ function checkNeighbors(ID, visited, dist, dim)
     return findmin(currentList)
 end
 
-name, coord, dim = readInstance("Week1/EX01-TSP/tsp_toy20.tsp")
+name, coord, dim = readInstance("Exercises/Week1/EX01-TSP/tsp_toy.tsp")
 dist = getDistanceMatrix(coord,dim)
+
 function main()
     println(name)
 
@@ -83,12 +84,12 @@ function main()
     for i in 1:dim
         for j in i:dim
             if(legalPair(i,j))
-                newSolution = copy(bestSolution)
+                newSolution = copy(visited)
                 newSolution[i+1], newSolution[j] = newSolution[j], newSolution[i+1]
-                newObjectiveValue = swapObjectiveValue(currentObjectiveValue,i,j)
+                newObjectiveValue = swapObjectiveValue(initHeuristicObjective,visited,i,j)
                 #newObjectiveValue = objectiveValue(newSolution)
                 if (newObjectiveValue < currentObjectiveValue)
-                    #println(string("Better solution found: ", newObjectiveValue, " < ", currentObjectiveValue))
+                    println(string("Better solution found: ", newObjectiveValue, " < ", currentObjectiveValue))
                     currentObjectiveValue = newObjectiveValue
                     bestSolution = copy(newSolution)
                 end
@@ -114,10 +115,10 @@ function legalPair(n, m)
     return true
 end
 
-function swapObjectiveValue(val, n, m)
-    sum = copy(val)
-    sum = sum - (dist[n,n+1] + dist[m,(m % dim)+1])
-    sum = sum + (dist[n,m] + dist[n+1,(m % dim)+1])
+function swapObjectiveValue(sum, solution, n, m)
+    sum = sum - (dist[solution[n],solution[n+1]] + dist[solution[m],solution[(m % dim)+1]])
+    sum = sum + (dist[solution[n],solution[m]] + dist[solution[n+1],solution[(m % dim)+1]])
+
     return sum
 end
 
