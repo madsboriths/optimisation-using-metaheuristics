@@ -28,7 +28,7 @@ function twoOptImprovement(initSolution, initObjectiveValue, twoOptMode)
     return solution, objectiveValue
 end
 
-function applyPertubationTwoOpt(solution, pertubations)
+function applyTwoOptPertubation(solution, pertubations)
     newObjectiveValue = 0
     newSolution = solution
     for i in 1:pertubations
@@ -42,3 +42,4 @@ function applyPertubationTwoOpt(solution, pertubations)
     end
     return newSolution
 end
+
