@@ -11,19 +11,23 @@ function getRandomEdgePair(dim)
     return edgeA, edgeB
 end
 
-function doubleBridgePertubation(solution)
-    l = length(solution)
-    k = Int(ceil(l/4))
-    a = rand(1:k)
-    b = a + rand(1:k)
-    c = b + rand(1:k)
-    
+function doubleBridgePertubation(solution, pertubations)
+    tempSolution = solution
     newSolution = []
-    append!(newSolution, solution[1:a])
-    append!(newSolution, solution[c:l])
-    append!(newSolution, solution[b:c-1])
-    append!(newSolution, solution[a+1:b-1])
-    return newSolution    
+    for i in 1:pertubations
+        l = length(solution)
+        k = Int(ceil(l/4))
+        a = rand(1:k)
+        b = a + rand(1:k)
+        c = b + rand(1:k)
+        
+        append!(newSolution, tempSolution[1:a])
+        append!(newSolution, tempSolution[c:l])
+        append!(newSolution, tempSolution[b:c-1])
+        append!(newSolution, tempSolution[a+1:b-1])
+        tempSolution = newSolution
+    end
+    return newSolution
 end
 
 function applyTwoOptPertubation(solution, pertubations, dim, dist)
@@ -35,7 +39,7 @@ function applyTwoOptPertubation(solution, pertubations, dim, dist)
     return newSolution
 end
 
-function shufflePertubation(solution)
+function shufflePertubation(solution, dim)
     return shuffle!([i for i in 1:dim])
 end
 

@@ -16,9 +16,10 @@ function main()
     totalTime = parse(Int, ARGS[3])
     name, UB, dim, dist = read_instance(instanceLocation)
     println("Running instance: ", name)
+    println(string("Upper bound: ", UB))
 
     # Default
-    pertubationMode = "2Opt"
+    pertubationMode = "DB/2Opt"
     twoOptMode = "first"
 
     # Read 2Opt improvement mode
@@ -32,7 +33,7 @@ function main()
     # Read pertubation mode
     if (length(ARGS) > 4)
         pertubationMode = ARGS[5]
-        if (!(ARGS[5] == "shuffle" || ARGS[5] == "2Opt" || ARGS[5] == "DB"))
+        if (!(ARGS[5] == "shuffle" || ARGS[5] == "2Opt" || ARGS[5] == "DB" || ARGS[5] == "DB/2Opt"))
             throw(ArgumentException(string("illegal argument: ", ARGS[5])))
         end
     end
@@ -59,7 +60,7 @@ function main()
 
     println("\nSearch completed.")
     println(string(iterations, " total iterations"))
-    println(string("Final solution: ", finalSolution, " with objective value ", finalObjectiveValue))
+    println(string("Final objective value: ", finalObjectiveValue))
     println(string("Upper bound: ", UB))
 
     writeSolution(finalSolution, solutionLocation)
