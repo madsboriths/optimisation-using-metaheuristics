@@ -20,8 +20,6 @@ function makeFeasible(visited, dist)
 end
 
 function nearestNeighbor(dist, dim) 
-    println("Starting nearest neighbor")
-
     visited = zeros(Int,1)
     visited[1] = 1
 
