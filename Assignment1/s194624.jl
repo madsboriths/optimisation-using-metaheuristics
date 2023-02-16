@@ -32,7 +32,11 @@ function main()
     pertubations = 1
 
     # "first" or "best" two opt improvement
-    twoOptMode = "first"
+    if (length(ARGS) == 4)
+        twoOptMode = ARGS[4]
+    else
+        twoOptMode = "first"
+    end
 
     # Initialize with solution using nearest neighbor 
     s0 = nearestNeighbor(dist, dim)
@@ -46,9 +50,8 @@ function main()
 
     iterations = 0
     while (elapsedTime < totalTime)
-        
-        #sMark = applyTwoOptPertubation(s, pertubations)
-        sMark = shufflePertubation(s)
+        sMark = applyTwoOptPertubation(s, pertubations)
+        #sMark = shufflePertubation(s)
         sStar, newObjectiveValue = localSearch(sMark, objectiveValue, twoOptMode, localSearchTime)
         if (newObjectiveValue < objectiveValue) 
             println(string("Found better solution: ", newObjectiveValue, " < ", objectiveValue))
