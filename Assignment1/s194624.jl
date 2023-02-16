@@ -5,8 +5,7 @@ include("InstanceReader.jl")
 include("Pertubation.jl")
 
 #name, UB, dim, dist = read_instance("Assignment1/Instances/Instances/ESC47.sop")
-pertubations = 3
-localSearchTime = 10
+localSearchTime = 60
 instanceLocation = ARGS[1]
 solutionLocation = ARGS[2]
 totalTime = parse(Int, ARGS[3])
@@ -14,13 +13,14 @@ totalTime = parse(Int, ARGS[3])
 name, UB, dim, dist = read_instance(instanceLocation)
 
 function writeSolution(solution)
-    dir = dirname(solutionLocation)
-
+    wDir = string(pwd())
+    
+    dir, file = splitdir(solutionLocation)
     if (!isdir(dir))
-        mkpath("./sols/")
+        mkpath(string("./", dir, "/"))
     end
     
-    open(solutionLocation, "w") do f
+    open(string(wDir, "/", solutionLocation), "w") do f
         for i in eachindex(solution)
             write(f, string(solution[i]-1, " "))
         end
@@ -29,8 +29,9 @@ end
 
 function main()
     println(name)
+    pertubations = 1
 
-    # "first" or "best
+    # "first" or "best" two opt improvement
     twoOptMode = "first"
 
     # Initialize with solution using nearest neighbor 
@@ -45,7 +46,9 @@ function main()
 
     iterations = 0
     while (elapsedTime < totalTime)
-        sMark = applyTwoOptPertubation(s, pertubations) # TODO Pertubate
+        
+        #sMark = applyTwoOptPertubation(s, pertubations)
+        sMark = shufflePertubation(s)
         sStar, newObjectiveValue = localSearch(sMark, objectiveValue, twoOptMode, localSearchTime)
         if (newObjectiveValue < objectiveValue) 
             println(string("Found better solution: ", newObjectiveValue, " < ", objectiveValue))
@@ -54,9 +57,8 @@ function main()
         end
         elapsedTime = round((time_ns()-start)/1e9,digits=3)
         iterations += 1
-        #println(string(elapsedTime, " seconds passed"))
     end  
-
+    
     println(string(iterations, " iterations"))
     println(string("Final solution: ", s, " with objective value ", objectiveValue))
     println(string("Upper bound: ", UB))

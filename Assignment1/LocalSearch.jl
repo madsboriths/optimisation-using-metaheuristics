@@ -3,18 +3,63 @@ function legalPair(n, m)
     if (abs(n-m) < 2) 
         return false
     end 
-    if (n == 1 && m == dim) 
-        return false
-    end
+
+    ## Relevant special case if the path was cyclic
+    #if (n == 1 && m == dim-1) 
+    #    return false
+    #end
+
     return true
 end
 
+# Perform 2Opt operation swapping two particular edges
+function twoOpt(solution, initObjectiveValue, edgeA, edgeB)
+    newSolution = copy(solution)
+    newSolution[edgeA+1], newSolution[edgeB] = newSolution[edgeB], newSolution[edgeA+1]
+    #newObjectiveValue = getObjectiveValue(newSolution)    
+    newObjectiveValue = swapObjectiveValue(solution, initObjectiveValue, edgeA, edgeB)
+    return newSolution, newObjectiveValue
+end
+
+# Search for a better solution using 2Opt in solution neighborhood
+# Can be set to "best" or "first" mode
+function twoOptImprovement(initSolution, initObjectiveValue, twoOptMode)
+    solution = copy(initSolution)
+    objectiveValue = initObjectiveValue
+    for i in 1:dim-1
+        for j in i:dim-1
+            if(legalPair(i,j))
+                newSolution, newObjectiveValue = twoOpt(initSolution, initObjectiveValue, i, j)
+                if (newObjectiveValue < objectiveValue)
+                    solution = newSolution
+                    objectiveValue = newObjectiveValue
+                    if (twoOptMode == "first") 
+                        return solution, objectiveValue
+                    end
+                end
+            end
+        end
+    end
+    return solution, objectiveValue
+end
+
+# Given two edges 'n' and 'm' recalculate the relevant costs for the new solution
 function swapObjectiveValue(solution, sum, n, m)
-    sum = sum - (dist[solution[n],solution[n+1]] + dist[solution[m],solution[(m % dim)+1]])
-    sum = sum + (dist[solution[n],solution[m]] + dist[solution[n+1],solution[(m % dim)+1]])
+    if (abs(n-m) == 2)
+        sum = sum - (dist[solution[n],solution[n+1]] + dist[solution[n+1],solution[m]]
+                   + dist[solution[m],solution[m+1]])
+        sum = sum + (dist[solution[n],solution[m]] + dist[solution[m],solution[n+1]]
+                   + dist[solution[n+1],solution[m+1]])
+    else
+        sum = sum - (dist[solution[n],solution[n+1]] + dist[solution[n+1],solution[n+2]]
+                   + dist[solution[m-1],solution[m]] + dist[solution[m],solution[m+1]])
+        sum = sum + (dist[solution[n],solution[m]] + dist[solution[m],solution[n+2]]
+                   + dist[solution[m-1],solution[n+1]] + dist[solution[n+1],solution[m+1]])
+    end
     return sum
 end
 
+# Calculates the objective value of a given solution iteratively
 function getObjectiveValue(solution)
     val = 0
     n = size(solution)[1]
@@ -24,6 +69,8 @@ function getObjectiveValue(solution)
     return val
 end
 
+# Perform local search on a particular solution
+# Can be set to "best" or "first" mode
 function localSearch(solution, initObjectiveValue, twoOptMode, time)   
     start = time_ns()
     elapsedTime = 0

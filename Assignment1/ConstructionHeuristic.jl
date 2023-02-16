@@ -1,22 +1,3 @@
-
-function is_sol_legal(sol,dim,)
-    # Check if a given sol is legal regarding prios
-    visited = [sol[dim]]
-
-    # Start from behind and go back. If a previous node has -1 with one in visited, the sol is not legal
-    for i in (dim-1):-1:1
-        for j in visited
-            if cost[sol[i],j] == -1
-                return false
-            end
-        end
-        # If node sol[i] is fine add it to visited
-        append!(visited,sol[i])
-    end
-
-    return true
-end
-
 function insertElement(list, element, dist)
     n = size(list)[1]
     for i in n:-1:1
