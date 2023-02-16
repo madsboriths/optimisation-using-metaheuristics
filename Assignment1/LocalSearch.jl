@@ -78,6 +78,7 @@ function localSearch(solution, initObjectiveValue, twoOptMode, time)
     objectiveValue = initObjectiveValue
     while (elapsedTime < time) 
         newSolution, newObjectiveValue = twoOptImprovement(solution, objectiveValue, twoOptMode)
+        
         newSolution = makeFeasible(newSolution, dist)
         newObjectiveValue = getObjectiveValue(newSolution)
         if (newObjectiveValue < objectiveValue) 

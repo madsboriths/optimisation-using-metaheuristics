@@ -1,7 +1,7 @@
 using Random
 include("ConstructionHeuristic.jl")
 include("LocalSearch.jl")
-include("InstanceReader.jl")
+include("InstanceHandler.jl")
 include("Pertubation.jl")
 include("ILS.jl")
 
@@ -10,36 +10,21 @@ struct ArgumentException <: Exception
 end
 
 #name, UB, dim, dist = read_instance("Assignment1/Instances/Instances/ESC47.sop")
-localSearchTime = 60
-instanceLocation = ARGS[1]
-solutionLocation = ARGS[2]
-totalTime = parse(Int, ARGS[3])
-
-name, UB, dim, dist = read_instance(instanceLocation)
-
-function writeSolution(solution)
-    wDir = string(pwd())
-    
-    dir, file = splitdir(solutionLocation)
-    if (!isdir(dir))
-        mkpath(string("./", dir, "/"))
-    end
-    
-    open(string(wDir, "/", solutionLocation), "w") do f
-        for i in eachindex(solution)
-            write(f, string(solution[i]-1, " "))
-        end
-    end    
-end
 
 function main()
+    localSearchTime = 60
+    instanceLocation = ARGS[1]
+    solutionLocation = ARGS[2]
+    totalTime = parse(Int, ARGS[3])
+    
+    name, UB, dim, dist = read_instance(instanceLocation)
     println("Running instance: ", name)
 
     # Default
-    pertubationMode = "shuffle"
+    pertubationMode = "2Opt"
     twoOptMode = "first"
 
-    # "first" or "best" two opt improvement
+    # Read 2Opt improvement mode
     if (length(ARGS) > 3)
         twoOptMode = ARGS[4]
         if (!(ARGS[4] == "first" || ARGS[4] == "best"))
@@ -47,13 +32,19 @@ function main()
         end
     end
 
+    # Read pertubation mode
     if (length(ARGS) > 4)
         pertubationMode = ARGS[5]
-        if (!(ARGS[5] == "shuffle" || ARGS[5] == "2Opt"))
+        if (!(ARGS[5] == "shuffle" || ARGS[5] == "2Opt" || ARGS[5] == "DB"))
             throw(ArgumentException(string("illegal argument: ", ARGS[5])))
         end
     end
-    
+
+    if (ARGS[2] == " ")
+        vals = rsplit(name, ".", limit=2)
+        solutionLocation = string("sols/", vals[1], ".sol")
+    end
+
     # Initialize with solution using nearest neighbor 
     s0 = nearestNeighbor(dist, dim)
     objectiveValue = getObjectiveValue(s0)
@@ -61,19 +52,19 @@ function main()
     # Find the initial local minimum
     s, objectiveValue = localSearch(s0, objectiveValue, twoOptMode, localSearchTime)
 
+    # Perform iterated local search 
     println("\nBeginning iterated local search...")
     println("2Opt strategy: ", twoOptMode, " improvement")
     println("Pertubation strategy: ", pertubationMode, "\n")
     println("Allowed time: ", totalTime, " seconds")
     
-    finalSolution, finalObjectiveValue, iterations = shuffleILS(s, objectiveValue, twoOptMode, totalTime)
+    finalSolution, finalObjectiveValue, iterations = ILS(s, objectiveValue, twoOptMode, totalTime, pertubationMode)
 
     println("\nSearch completed.")
     println(string(iterations, " total iterations"))
     println(string("Final solution: ", finalSolution, " with objective value ", finalObjectiveValue))
     println(string("Upper bound: ", UB))
 
-    writeSolution(finalSolution)
+    writeSolution(finalSolution, solutionLocation)
 end
-
 main()

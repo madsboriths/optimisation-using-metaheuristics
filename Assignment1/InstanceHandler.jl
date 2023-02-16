@@ -31,6 +31,21 @@ function read_instance(filename)
     return name, upper_bound, dimention, cost
 end
 
+function writeSolution(solution, solutionLocation)
+    wDir = string(pwd())
+    
+    dir, file = splitdir(solutionLocation)
+    if (!isdir(dir))
+        mkpath(string("./", dir, "/"))
+    end
+    
+    open(string(wDir, "/", solutionLocation), "w") do f
+        for i in eachindex(solution)
+            write(f, string(solution[i]-1, " "))
+        end
+    end    
+end
+
 function readTSPInstance(filename)
     #open file for reading
     file = open(filename)
