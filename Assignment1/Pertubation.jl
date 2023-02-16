@@ -1,6 +1,6 @@
 using Random
 
-function getRandomEdgePair()
+function getRandomEdgePair(dim)
     edgeA = rand(1:dim-1)
     temp = rand(2:dim-3)
     edgeB = ((edgeA + (temp))%(dim-1))+1
@@ -26,11 +26,11 @@ function doubleBridgePertubation(solution)
     return newSolution    
 end
 
-function applyTwoOptPertubation(solution, pertubations)
+function applyTwoOptPertubation(solution, pertubations, dim, dist)
     newSolution = solution
     for i in 1:pertubations
-        edgeA, edgeB = getRandomEdgePair()        
-        newSolution, newObjectiveValue = twoOpt(newSolution, 0, edgeA, edgeB)
+        edgeA, edgeB = getRandomEdgePair(dim)        
+        newSolution, newObjectiveValue = twoOpt(newSolution, 0, edgeA, edgeB, dist)
     end
     return newSolution
 end

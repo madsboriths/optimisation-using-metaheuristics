@@ -13,23 +13,23 @@ function legalPair(n, m)
 end
 
 # Perform 2Opt operation swapping two particular edges
-function twoOpt(solution, initObjectiveValue, edgeA, edgeB)
+function twoOpt(solution, initObjectiveValue, edgeA, edgeB, dist)
     newSolution = copy(solution)
     newSolution[edgeA+1], newSolution[edgeB] = newSolution[edgeB], newSolution[edgeA+1]
     #newObjectiveValue = getObjectiveValue(newSolution)    
-    newObjectiveValue = swapObjectiveValue(solution, initObjectiveValue, edgeA, edgeB)
+    newObjectiveValue = swapObjectiveValue(solution, initObjectiveValue, edgeA, edgeB, dist)
     return newSolution, newObjectiveValue
 end
 
 # Search for a better solution using 2Opt in solution neighborhood
 # Can be set to "best" or "first" mode
-function twoOptImprovement(initSolution, initObjectiveValue, twoOptMode)
+function twoOptImprovement(initSolution, initObjectiveValue, twoOptMode, dim, dist)
     solution = copy(initSolution)
     objectiveValue = initObjectiveValue
     for i in 1:dim-1
         for j in i:dim-1
             if(legalPair(i,j))
-                newSolution, newObjectiveValue = twoOpt(initSolution, initObjectiveValue, i, j)
+                newSolution, newObjectiveValue = twoOpt(initSolution, initObjectiveValue, i, j, dist)
                 if (newObjectiveValue < objectiveValue)
                     solution = newSolution
                     objectiveValue = newObjectiveValue
@@ -44,7 +44,7 @@ function twoOptImprovement(initSolution, initObjectiveValue, twoOptMode)
 end
 
 # Given two edges 'n' and 'm' recalculate the relevant costs for the new solution
-function swapObjectiveValue(solution, sum, n, m)
+function swapObjectiveValue(solution, sum, n, m, dist)
     if (abs(n-m) == 2)
         sum = sum - (dist[solution[n],solution[n+1]] + dist[solution[n+1],solution[m]]
                    + dist[solution[m],solution[m+1]])
@@ -60,7 +60,7 @@ function swapObjectiveValue(solution, sum, n, m)
 end
 
 # Calculates the objective value of a given solution iteratively
-function getObjectiveValue(solution)
+function getObjectiveValue(solution, dist)
     val = 0
     n = size(solution)[1]
     for i in 1:n-1
@@ -71,16 +71,17 @@ end
 
 # Perform local search on a particular solution
 # Can be set to "best" or "first" mode
-function localSearch(solution, initObjectiveValue, twoOptMode, time)   
+function localSearch(solution, initObjectiveValue, twoOptMode, time, dist, dim)   
     start = time_ns()
     elapsedTime = 0
     
     objectiveValue = initObjectiveValue
     while (elapsedTime < time) 
-        newSolution, newObjectiveValue = twoOptImprovement(solution, objectiveValue, twoOptMode)
-        
+        newSolution, newObjectiveValue = twoOptImprovement(solution, objectiveValue, twoOptMode, dim, dist)
+
         newSolution = makeFeasible(newSolution, dist)
-        newObjectiveValue = getObjectiveValue(newSolution)
+        newObjectiveValue = getObjectiveValue(newSolution, dist)
+
         if (newObjectiveValue < objectiveValue) 
             objectiveValue = newObjectiveValue
             solution = newSolution

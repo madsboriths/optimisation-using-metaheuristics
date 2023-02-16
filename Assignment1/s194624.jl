@@ -1,7 +1,7 @@
 using Random
 include("ConstructionHeuristic.jl")
 include("LocalSearch.jl")
-include("InstanceHandler.jl")
+include("IOHandler.jl")
 include("Pertubation.jl")
 include("ILS.jl")
 
@@ -9,14 +9,11 @@ struct ArgumentException <: Exception
     message::String
 end
 
-#name, UB, dim, dist = read_instance("Assignment1/Instances/Instances/ESC47.sop")
-
 function main()
     localSearchTime = 60
     instanceLocation = ARGS[1]
     solutionLocation = ARGS[2]
     totalTime = parse(Int, ARGS[3])
-    
     name, UB, dim, dist = read_instance(instanceLocation)
     println("Running instance: ", name)
 
@@ -47,10 +44,10 @@ function main()
 
     # Initialize with solution using nearest neighbor 
     s0 = nearestNeighbor(dist, dim)
-    objectiveValue = getObjectiveValue(s0)
+    objectiveValue = getObjectiveValue(s0, dist)
     
     # Find the initial local minimum
-    s, objectiveValue = localSearch(s0, objectiveValue, twoOptMode, localSearchTime)
+    s, objectiveValue = localSearch(s0, objectiveValue, twoOptMode, localSearchTime, dist, dim)
 
     # Perform iterated local search 
     println("\nBeginning iterated local search...")
@@ -58,7 +55,7 @@ function main()
     println("Pertubation strategy: ", pertubationMode, "\n")
     println("Allowed time: ", totalTime, " seconds")
     
-    finalSolution, finalObjectiveValue, iterations = ILS(s, objectiveValue, twoOptMode, totalTime, pertubationMode)
+    finalSolution, finalObjectiveValue, iterations = ILS(s, objectiveValue, twoOptMode, localSearchTime, totalTime, pertubationMode, dim, dist)
 
     println("\nSearch completed.")
     println(string(iterations, " total iterations"))
