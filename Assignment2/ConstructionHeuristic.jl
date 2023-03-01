@@ -2,30 +2,74 @@ using Random
 
 function GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
     println("Entered GRC")
-    
+
+    products = [i for i in 1:dim]
+    availableTimes = Int[H for i in 1:k]
     sol = [Int[] for i in 1:k]
-    currentObjectiveValue = 0
+
+    println(availableTimes)
 
     # Put in initial elements to each assembly line
-    products = [i for i in 1:dim]
-    println
+    currentObjectiveValue = 0
     for i in eachindex(sol)
+        # Extract random element
         element = rand(products)
-        append!(sol[i], element)
+        
+        # Add to solution
+        push!(sol[i], element)
+
+        # Update revenue
         currentObjectiveValue += rev[element]
-        deleteat!(products, element)
+        
+        # Update available time
+        availableTimes[i] -= p[element]
+        
+        # Mark as visited
+        filter!(x -> x != element, products)
     end
 
-    for i in 1:1
-        candidates, objectiveValues = getCandidates(sol[i], products, rev, rev_pair, dim, alpha, H, p)
-        element = rand(candidates)
-        append!(sol[i], element)
-        currentObjectiveValue += objectiveValues[i]
+    println(availableTimes)
+
+    hasCandidates = [true for i in 1:k]
+    while (true)
+        for i in 1:k
+            # Get candidate list
+            candidates, objectiveValues = getCandidates(sol[i], availableTimes[i], products, rev, rev_pair, dim, alpha, H, p)
+
+            if (!isempty(candidates))
+                # Select element from candidate
+                index = rand(1:length(candidates))
+                element = candidates[index]
+    
+                # Add to solution
+                append!(sol[i], element)
+    
+                # Update revenue
+                currentObjectiveValue += objectiveValues[index]
+    
+                # Update available time
+                availableTimes[i] -= p[element]
+    
+                # Mark as visited
+                filter!(x -> x != element, products)
+            else
+                hasCandidates[i] = false
+            end
+        end
+        if (!any(hasCandidates))
+            break
+        end
     end
+
+    println(availableTimes)
+    println(currentObjectiveValue)
+
+    #TODO Add any remaining elements?
+
     return sol, currentObjectiveValue
 end
 
-function getCandidates(productionLine, products, rev, rev_pair, dim, alpha, H, p)
+function getCandidates(productionLine, availableTime, products, rev, rev_pair, dim, alpha, H, p)
     objectiveValues = fill(-1, dim)
 
     for i in products
@@ -39,7 +83,8 @@ function getCandidates(productionLine, products, rev, rev_pair, dim, alpha, H, p
     min = Int(round(alpha*(max-minimum(nonNegativeValues))))
 
     candidates = findall(x -> withinRange(x, min, max), objectiveValues)
-    
+    filter!(x -> p[x] <= availableTime, candidates)
+
     candidateValues = Int[]
     for i in candidates
         push!(candidateValues, objectiveValues[i])
