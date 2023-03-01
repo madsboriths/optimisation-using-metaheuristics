@@ -1,6 +1,7 @@
 using Random
 include("PlastOutReader.jl")
 include("ConstructionHeuristic.jl")
+include("GRASP.jl")
 
 struct ArgumentException <: Exception
     message::String
@@ -12,13 +13,12 @@ function main()
     totalTime = parse(Int, ARGS[3])
     
     if (length(ARGS) > 3) 
-        alpha = ARGS[4]
+        alpha = parse(Float32, ARGS[4])
     else 
         alpha = 0
     end
 
     name, dim, LB , rev, rev_pair, k, H, p = read_instance(instanceLocation)
-    objectiveValue = 0
     
     println("name ", name)
     println("dim ", dim)
@@ -28,7 +28,7 @@ function main()
     println("H ", H)
     println("p ", typeof(p), " size ", size(p))
 
-    sol = GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
+    sol, objectiveValue = GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
 
     println("Final solution: ", sol, " with objective value ", objectiveValue)
 end

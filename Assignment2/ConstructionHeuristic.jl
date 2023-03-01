@@ -1,36 +1,50 @@
 using Random
 
 function GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
+    println("Entered GRC")
+    
     sol = [Int[] for i in 1:k]
     currentObjectiveValue = 0
 
     # Put in initial elements to each assembly line
     products = [i for i in 1:dim]
+    println
     for i in eachindex(sol)
         element = rand(products)
         append!(sol[i], element)
-        println("element ", i, " revenue: ", rev[element])
         currentObjectiveValue += rev[element]
         deleteat!(products, element)
     end
 
-    println("yo")
-    println(currentObjectiveValue)
-
-    #candidates = getCandidates(sol, products, rev, rev_pair)
-    #while(length(products) > 0) 
-    #    element = rand(candidates)
-    #    candidates = getCandidates(products, rev, rev_pair)
-    #end
-
-    return sol
+    for i in 1:1
+        candidates, objectiveValues = getCandidates(sol[i], products, rev, rev_pair, dim, alpha, H, p)
+        element = rand(candidates)
+        append!(sol[i], element)
+        currentObjectiveValue += objectiveValues[i]
+    end
+    return sol, currentObjectiveValue
 end
 
-function getCandidates(products, rev, rev_pair)
-    cMin = minimum(rev)
-    cMax = maximum(rev)
+function getCandidates(productionLine, products, rev, rev_pair, dim, alpha, H, p)
+    objectiveValues = fill(-1, dim)
 
-    return candidates
+    for i in products
+        for j in productionLine
+            objectiveValues[i] = rev[i] + rev_pair[j,i]
+        end
+    end
+    nonNegativeValues = filter(x -> x >= 0, objectiveValues)
+    
+    max = maximum(nonNegativeValues)
+    min = Int(round(alpha*(max-minimum(nonNegativeValues))))
+
+    candidates = findall(x -> withinRange(x, min, max), objectiveValues)
+    
+    candidateValues = Int[]
+    for i in candidates
+        push!(candidateValues, objectiveValues[i])
+    end
+    return candidates, candidateValues
 end
 
 function withinRange(x, a, b)
