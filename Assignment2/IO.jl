@@ -22,3 +22,12 @@ function read_instance(filename)
     return name, size, LB ,rev, rev_pair, k, H, p
 end
 
+function printInstanceInformation(name, dim, LB , rev, rev_pair, k, H, p)
+    println("name ", name)
+    println("dim ", dim)
+    println("rev ", typeof(rev), " size ", size(rev))
+    println("revpair ", typeof(rev_pair), " size ", size(rev_pair))
+    println("k ", k)
+    println("H ", H)
+    println("p ", typeof(p), " size ", size(p))
+end

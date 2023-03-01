@@ -1,13 +1,9 @@
 using Random
 
-function GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
-    println("Entered GRC")
-
+function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
     products = [i for i in 1:dim]
     availableTimes = Int[H for i in 1:k]
     sol = [Int[] for i in 1:k]
-
-    println(availableTimes)
 
     # Put in initial elements to each assembly line
     currentObjectiveValue = 0
@@ -27,8 +23,6 @@ function GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
         # Mark as visited
         filter!(x -> x != element, products)
     end
-
-    println(availableTimes)
 
     hasCandidates = [true for i in 1:k]
     while (true)
@@ -61,12 +55,8 @@ function GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
         end
     end
 
-    println(availableTimes)
-    println(currentObjectiveValue)
-
     #TODO Add any remaining elements?
-
-    return sol, currentObjectiveValue
+    return sol, currentObjectiveValue, availableTimes
 end
 
 function getCandidates(productionLine, availableTime, products, rev, rev_pair, dim, alpha, H, p)
@@ -89,6 +79,7 @@ function getCandidates(productionLine, availableTime, products, rev, rev_pair, d
     for i in candidates
         push!(candidateValues, objectiveValues[i])
     end
+
     return candidates, candidateValues
 end
 

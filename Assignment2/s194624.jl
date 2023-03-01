@@ -1,7 +1,7 @@
 using Random
-include("PlastOutReader.jl")
+include("IO.jl")
 include("ConstructionHeuristic.jl")
-include("GRASP.jl")
+include("LocalSearch.jl")
 
 struct ArgumentException <: Exception
     message::String
@@ -20,17 +20,27 @@ function main()
 
     name, dim, LB , rev, rev_pair, k, H, p = read_instance(instanceLocation)
     
-    println("name ", name)
-    println("dim ", dim)
-    println("rev ", typeof(rev), " size ", size(rev))
-    println("revpair ", typeof(rev_pair), " size ", size(rev_pair))
-    println("k ", k)
-    println("H ", H)
-    println("p ", typeof(p), " size ", size(p))
+    printInstanceInformation(name, dim, LB , rev, rev_pair, k, H, p)
 
-    sol, objectiveValue = GRCPlast(dim, LB , rev, rev_pair, k, H, p, alpha)
+    availableTimes = Int[H for i in 1:k]
+    actualRevenue = 0
+    sol = [Int[] for i in 1:k]
+    
+    iterations = 0    
+    elapsedTime = 0
+    start = time_ns()
+    while (elapsedTime <= totalTime)
+        newSol, newRevenue, availableTimes = GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
+        newSol, newRevenue = LocalSearch(newSol, newRevenue, availableTimes, totalTime, dim, rev, rev_pair, k, H, p, alpha)
+        if (newRevenue > actualRevenue)
+            sol = newSol
+            actualRevenue = newRevenue
+        end
+        elapsedTime = round((time_ns()-start)/1e9,digits=3)
+        iterations += 1
+    end
+    println("iterations: ", iterations)
 
-    println("Final solution: ", sol, " with objective value ", objectiveValue)
+    println("Final solution dimensions: ", sol, " with objective value ", actualRevenue)
 end
-
 main()
