@@ -1,60 +1,99 @@
 
+function LocalSearch(sol, revenue, dim, rev, rev_pair, k, H, p, alpha, mF, maxTime)
+    
+    bestKnownSol = deepcopy(sol)
+    bestKnownRev = deepcopy(revenue)
+    bestKnownMF = deepcopy(mF)
 
-function LocalSearch(sol, revenue, availableTimes, totalTime, dim, rev, rev_pair, k, H, p, alpha)
-    maxTime = totalTime / 100
+    # Remove alpha
     elapsedTime = 0
-
     start = time_ns()
-    while (elapsedTime < maxTime) 
-        newSolution, newRevenue = swapImprovement(sol, revenue, availableTimes, dim, rev, rev_pair, k, H, p, alpha)
-        if (newRevenue > revenue)
-            sol = newSolution
-            revenue = newRevenue
+
+    while (elapsedTime < maxTime)
+        newSol, newRevenue, newMF = swapImprovement(bestKnownSol, bestKnownRev, dim, rev, rev_pair, k, H, p, alpha, bestKnownMF)
+        if (newRevenue > bestKnownRev)
+            bestKnownSol = newSol
+            bestKnownRev = newRevenue
+            bestKnownMF = newMF
         else 
             break
         end
         elapsedTime = round((time_ns()-start)/1e9,digits=3)
     end
-    return sol, revenue    
+
+    return bestKnownSol, bestKnownRev
 end
 
-## Uses first improvement
-function swapImprovement(sol, revenue, availableTimes, dim, rev, rev_pair, k, H, p, alpha)
-    done = false
+# Uses first improvement
+function swapImprovement(sol, revenue, dim, rev, rev_pair, k, H, p, alpha, mF)
+
+    bestKnownSol = deepcopy(sol)
+    bestKnownRev = deepcopy(revenue)
+    bestKnownMF = deepcopy(mF)
+
     for i in 1:(k-1)
         for j in (i+1):k
-            newSol, newRevenue = productionLineImprovement(i, j, sol, revenue, availableTimes, dim, rev, rev_pair, k, H, p, alpha)
-            if (newRevenue > revenue)
-                sol = newSol
-                revenue = newRevenue
-                done = true
-                return sol, revenue
+            newSol, newRevenue, newMF = productionLineImprovement(bestKnownSol, bestKnownRev, dim, rev, rev_pair, k, H, p, alpha, i, j, bestKnownMF)
+            if (newRevenue > bestKnownRev)
+               return newSol, newRevenue, newMF
             end
         end
     end
-    return sol, revenue
+    return bestKnownSol, bestKnownRev, bestKnownMF
 end
 
-function productionLineImprovement(pl1, pl2, sol, revenue, availableTimes, dim, rev, rev_pair, k, H, p, alpha)
+function productionLineImprovement(sol, revenue, dim, rev, rev_pair, k, H, p, alpha, pl1, pl2, mF)
 
-    for i in 1:(length(sol[pl1])-1)
-        for j in (i+1):(length(sol[pl2]))
-            leftElement = sol[pl1,i]
-            rightElement = sol[pl2,j]            
-            if (p[rightElement] <= (availableTimes[pl1] + p[leftElement]) 
-                && p[leftElement] <= (availableTimes[pl2] + p[rightElement]))
+    bestKnownSol = deepcopy(sol)
+    bestKnownRev = deepcopy(revenue)
+    bestKnownMF = deepcopy(mF)
 
-
-                availableTimes[pl1] + p[leftElement] - p[rightElement]
-                availableTimes[pl2] + p[rightElement] - p[leftElement]
-                replace!(sol[pl1], leftElement => rightElement)
-                replace!(sol[pl2], rightElement => leftElement)
-                
-                if (newRevenue > revenue)
-                    return newSol, newRevenue
+    for i in bestKnownSol[pl1]
+        for j in bestKnownSol[pl2]
+            if (legalPair(H, p, pl1, pl2, i, j, bestKnownMF))
+                newSol, newRevenue, newMF = swap(bestKnownSol, bestKnownRev, dim, rev, rev_pair, k, H, p, alpha, pl1, pl2, i, j, bestKnownMF)
+                if (newRevenue > bestKnownRev)
+                    return newSol, newRevenue, newMF
                 end
             end
         end
     end
-    return sol, revenue
+    return bestKnownSol, bestKnownRev, bestKnownMF
+end
+
+function swap(sol, revenue, dim, rev, rev_pair, k, H, p, alpha, pl1, pl2, leftElement, rightElement, mF)
+    
+    finalSol = deepcopy(sol)
+    finalRev = deepcopy(revenue)
+    finalMF = deepcopy(mF)
+    
+    # Remove from each line
+    filter!(x -> x != leftElement, finalSol[pl1])
+    filter!(x -> x != rightElement, finalSol[pl2])
+    
+    # Update times
+    finalMF[pl1] += (p[rightElement] - p[leftElement])
+    finalMF[pl2] += (p[leftElement] - p[rightElement])
+    
+    # Update revenue
+    for i in finalSol[pl1]
+        finalRev -= rev_pair[leftElement, i]
+        finalRev += rev_pair[rightElement, i]
+    end
+    for i in finalSol[pl2]
+        finalRev -= rev_pair[rightElement, i]
+        finalRev += rev_pair[leftElement, i]
+    end
+    
+    # Insert back into lines
+    push!(finalSol[pl1], rightElement)
+    push!(finalSol[pl2], leftElement)
+    
+    return finalSol, finalRev, finalMF
+end
+
+function legalPair(H, p, pl1, pl2, leftElement, rightElement, mF)
+    p1 = mF[pl1] + (p[rightElement] - p[leftElement]) <= H
+    p2 = mF[pl2] + (p[leftElement] - p[rightElement]) <= H
+    return p1 && p2 
 end

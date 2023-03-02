@@ -23,11 +23,30 @@ function read_instance(filename)
 end
 
 function printInstanceInformation(name, dim, LB , rev, rev_pair, k, H, p)
-    println("name ", name)
-    println("dim ", dim)
-    println("rev ", typeof(rev), " size ", size(rev))
-    println("revpair ", typeof(rev_pair), " size ", size(rev_pair))
-    println("k ", k)
-    println("H ", H)
-    println("p ", typeof(p), " size ", size(p))
+    println()
+    println("Running instance with name: ", name)
+    println("dim: ", dim)
+    println("rev: ", typeof(rev), " size ", size(rev))
+    println("rev_pair: ", typeof(rev_pair), " size ", size(rev_pair))
+    println("k: ", k)
+    println("H: ", H)
+    println("p: ", typeof(p), " size ", size(p))
+end
+
+function writeSolution(solution, solutionLocation)
+    wDir = string(pwd())
+    
+    dir, file = splitdir(solutionLocation)
+    if (!isdir(dir))
+        mkpath(string("./", dir, "/"))
+    end
+    
+    open(string(wDir, "/", solutionLocation), "w") do f
+        for i in eachindex(solution)
+            for j in solution[i]
+                write(f, string(j, " "))
+            end
+            write(f, "\n")
+        end
+    end    
 end

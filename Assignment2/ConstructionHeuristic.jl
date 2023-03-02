@@ -2,11 +2,11 @@ using Random
 
 function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
     products = [i for i in 1:dim]
-    availableTimes = Int[H for i in 1:k]
+    mF = Int[0 for i in 1:k]
     sol = [Int[] for i in 1:k]
 
     # Put in initial elements to each assembly line
-    currentObjectiveValue = 0
+    revenue = 0
     for i in eachindex(sol)
         # Extract random element
         element = rand(products)
@@ -15,10 +15,10 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
         push!(sol[i], element)
 
         # Update revenue
-        currentObjectiveValue += rev[element]
+        revenue += rev[element]
         
         # Update available time
-        availableTimes[i] -= p[element]
+        mF[i] += p[element]
         
         # Mark as visited
         filter!(x -> x != element, products)
@@ -28,8 +28,7 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
     while (true)
         for i in 1:k
             # Get candidate list
-            candidates, objectiveValues = getCandidates(sol[i], availableTimes[i], products, rev, rev_pair, dim, alpha, H, p)
-
+            candidates, revenues = getCandidates(sol[i], mF[i], products, rev, rev_pair, dim, alpha, H, p)
             if (!isempty(candidates))
                 # Select element from candidate
                 index = rand(1:length(candidates))
@@ -39,10 +38,10 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
                 append!(sol[i], element)
     
                 # Update revenue
-                currentObjectiveValue += objectiveValues[index]
+                revenue += revenues[index]
     
                 # Update available time
-                availableTimes[i] -= p[element]
+                mF[i] += p[element]
     
                 # Mark as visited
                 filter!(x -> x != element, products)
@@ -56,28 +55,27 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
     end
 
     #TODO Add any remaining elements?
-    return sol, currentObjectiveValue, availableTimes
+    return sol, revenue, mF
 end
 
-function getCandidates(productionLine, availableTime, products, rev, rev_pair, dim, alpha, H, p)
-    objectiveValues = fill(-1, dim)
-
+function getCandidates(productionLine, mF, products, rev, rev_pair, dim, alpha, H, p)
+    revenues = fill(-1, dim)
     for i in products
         for j in productionLine
-            objectiveValues[i] = rev[i] + rev_pair[j,i]
+            revenues[i] = rev[i] + rev_pair[i,j]
         end
     end
-    nonNegativeValues = filter(x -> x >= 0, objectiveValues)
+    nonNegativeValues = filter(x -> x >= 0, revenues)
     
     max = maximum(nonNegativeValues)
     min = Int(round(alpha*(max-minimum(nonNegativeValues))))
 
-    candidates = findall(x -> withinRange(x, min, max), objectiveValues)
-    filter!(x -> p[x] <= availableTime, candidates)
+    candidates = findall(x -> withinRange(x, min, max), revenues)
+    filter!(x -> p[x] + mF <= H, candidates)
 
     candidateValues = Int[]
     for i in candidates
-        push!(candidateValues, objectiveValues[i])
+        push!(candidateValues, revenues[i])
     end
 
     return candidates, candidateValues
