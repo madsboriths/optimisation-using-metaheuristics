@@ -6,7 +6,7 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
     sol = [Int[] for i in 1:k]
 
     # Put in initial elements to each assembly line
-    revenue = 0
+    totalRevenue = 0
     for i in eachindex(sol)
         # Extract random element
         element = rand(products)
@@ -15,7 +15,7 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
         push!(sol[i], element)
 
         # Update revenue
-        revenue += rev[element]
+        totalRevenue += rev[element]
         
         # Update available time
         mF[i] += p[element]
@@ -38,7 +38,7 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
                 append!(sol[i], element)
     
                 # Update revenue
-                revenue += revenues[index]
+                totalRevenue += revenues[index]
     
                 # Update available time
                 mF[i] += p[element]
@@ -53,16 +53,15 @@ function GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
             break
         end
     end
-
-    #TODO Add any remaining elements?
-    return sol, revenue, mF
+    return sol, totalRevenue, mF
 end
 
 function getCandidates(productionLine, mF, products, rev, rev_pair, dim, alpha, H, p)
-    revenues = fill(-1, dim)
+    revenues = fill(0, dim)
     for i in products
+        revenues[i] += rev[i]
         for j in productionLine
-            revenues[i] = rev[i] + rev_pair[i,j]
+            revenues[i] += rev_pair[i,j]
         end
     end
     nonNegativeValues = filter(x -> x >= 0, revenues)

@@ -36,6 +36,7 @@ function main()
     elapsedTime = 0
     println()
     println("Running GRASP for ", maxTime, " seconds...")
+    println()
     start = time_ns()
     while (elapsedTime < maxTime)
         sol, revenue, mF = GRCPlast(dim, rev, rev_pair, k, H, p, alpha)
@@ -48,7 +49,7 @@ function main()
         elapsedTime = round((time_ns()-start)/1e9,digits=3)
         iterations += 1
     end
-    
+
     println()
     println("GRASP Executed...")
     println("Iterations: ", iterations)
