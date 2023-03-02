@@ -1,6 +1,7 @@
+### s194624.jl
+
 using Random
-using Statistics
-using LinearAlgebra
+
 include("IO.jl")
 include("ConstructionHeuristic.jl")
 include("LocalSearch.jl")
