@@ -15,11 +15,14 @@ function read_instance(filename::String)
     end
     close(f)
 
+    path, file = split(filename, ".")
+    dir, name = split(path, "/")  
     return n_jobs, # the number of jobs
            n_processors, # the number of processors = number of operations
            UB, # the best-known upper bound
            duration, # the duration of each operation
-           processor # the processor assinged to each operation
+           processor, # the processor assinged to each operation
+           name
 end
 
 function writeSolution(solution, solutionLocation, n_jobs, n_processors)
@@ -57,7 +60,6 @@ function printInstance(n_jobs, n_processors, UB, duration, processor)
 end
 
 function printResults(s, occupiedRanges)
-    println()
     for i in eachindex(s)
         println("Processor ", i, ": ", s[i])
     end
