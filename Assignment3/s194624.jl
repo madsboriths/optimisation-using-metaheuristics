@@ -1,4 +1,5 @@
 ### s194624.jl
+
 using Random
 
 include("IO.jl")
@@ -11,7 +12,7 @@ end
 function main()
     instanceLocation = ARGS[1]
     solutionLocation = ARGS[2]
-    maxTimeAllowed = parse(Int, ARGS[3])
+    maxTime = parse(Int, ARGS[3])
     n_jobs, n_processors, UB, duration, processor, name = read_instance(instanceLocation)
     
     printInstance(n_jobs, n_processors, UB, duration, processor)
@@ -20,10 +21,7 @@ function main()
     s, occupiedRanges = init(n_jobs, n_processors, UB, duration, processor)
     println("Initial solution found!")
 
-    #TODO Find initial temperature setting
-    alpha = 0.999999
-
-    # Number of random elements to remove
+    # Number of random elements to remove for neighbors
     k = 5
 
     elapsedTime = 0
@@ -31,11 +29,17 @@ function main()
     deltaSum = 0
     betaMinus = 0
     betaPlus = 0
-    gamma = 0.99999999
+    gamma = 0.9999999
+    sCost = 0
     K = 10000
     T = 0
-    start = time_ns()
 
+    # Rough assumption that number of iterations are linear to number of jobs (and that n_jobs = n_processors) 
+    # For example with 4 jobs the approximate number of iterations is about 103000, thus to generalize:
+    estimatedIterationsPerSec = round(Int, (103000*4)/n_jobs)
+
+    println("\nRunning simulated annealing algorithm for ", maxTime, " seconds...")
+    start = time_ns()
     while (iterations <= K)
         if (iterations < K)
             sMark, occupiedRangesMark = randomStep(s, occupiedRanges, duration, processor, k)
@@ -47,22 +51,34 @@ function main()
                 betaMinus += 1
             end
         else
+            if (betaMinus == 0)
+                betaMinus = 1
+            end
             T = deltaSum / log(betaMinus / (betaMinus*gamma-betaPlus*(1-gamma)))
         end
         iterations += 1
     end
-
-    eta = 0.0000001
-    alpha = exp(log(-1/(T*log(eta)))/100000)
     
-    println("Init temperature: ", T)
-    println("Alpha decay: ", alpha)
+    eta = 0.00001
+    estimatedIterations = estimatedIterationsPerSec*maxTime
 
-    while (!terminate(elapsedTime, maxTimeAllowed))
+    alpha = exp(log(-1/(T*log(eta)))/estimatedIterations)
+    
+    println("\nIteration ", K, ": Calculated initial temperature and temperature decay!")
+    println("Initial temperature: ", T)
+    println("Alpha decay: ", alpha)
+    println()
+
+    while (!terminate(elapsedTime, maxTime))
         sMark, occupiedRangesMark = randomStep(s, occupiedRanges, duration, processor, k)
         sMarkCost = cost(sMark)
         sCost = cost(s)
         delta = Float64(sMarkCost - sCost)
+
+        if (iterations % round(Int, estimatedIterations / 15) == 0)
+            println("Iteration ", iterations, "")
+            println("Current objective value: ", sCost)
+        end        
 
         if (delta < 0 || rand() < exp(-(delta/T)))
             s = sMark
@@ -76,11 +92,13 @@ function main()
         iterations += 1
     end
 
-    println(iterations, " iterations total...", )
+    println("\nTimed out")
+    println(iterations, " actual iterations", )
+    println(Int(round(estimatedIterations)), " estimated iterations")
     println()
 
-    println("Final solution:")
-    printResults(s, occupiedRanges)
+    println("Final objective value: ", sCost)
+    #printResults(s, occupiedRanges)
 
     if (ARGS[2] == " ")
         vals = rsplit(name, ".", limit=2)
