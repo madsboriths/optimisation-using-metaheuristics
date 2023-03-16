@@ -21,34 +21,63 @@ function main()
     println("Initial solution found!")
 
     #TODO Find initial temperature setting
-    T = 100
-    alpha = 0.99
+    alpha = 0.999999
 
     # Number of random elements to remove
     k = 5
 
     elapsedTime = 0
-    start = time_ns()
     iterations = 0
-    while (!terminate(elapsedTime, maxTimeAllowed))
+    deltaSum = 0
+    betaMinus = 0
+    betaPlus = 0
+    gamma = 0.99999999
+    K = 10000
+    T = 0
+    start = time_ns()
 
+    while (iterations <= K)
+        if (iterations < K)
+            sMark, occupiedRangesMark = randomStep(s, occupiedRanges, duration, processor, k)
+            diff = Float64(cost(sMark) - cost(s))
+            if (diff > 0)
+                deltaSum += diff
+                betaPlus += 1
+            elseif (diff < 0)
+                betaMinus += 1
+            end
+        else
+            T = deltaSum / log(betaMinus / (betaMinus*gamma-betaPlus*(1-gamma)))
+        end
+        iterations += 1
+    end
+
+    eta = 0.0000001
+    alpha = exp(log(-1/(T*log(eta)))/100000)
+    
+    println("Init temperature: ", T)
+    println("Alpha decay: ", alpha)
+
+    while (!terminate(elapsedTime, maxTimeAllowed))
         sMark, occupiedRangesMark = randomStep(s, occupiedRanges, duration, processor, k)
-        #TODO Implement delta-evaluation
         sMarkCost = cost(sMark)
         sCost = cost(s)
         delta = Float64(sMarkCost - sCost)
-        if (delta < 0 #=|| rand() < exp(-(delta/T))=#)
-            println("Better solution found: ", sMarkCost, " < ", sCost)
+
+        if (delta < 0 || rand() < exp(-(delta/T)))
             s = sMark
             occupiedRanges = occupiedRangesMark
         end
 
         #TODO Determine temperature decay
-        T = T * alpha
+        T *= alpha
         
         elapsedTime = round((time_ns()-start)/1e9,digits=3)
         iterations += 1
     end
+
+    println(iterations, " iterations total...", )
+    println()
 
     println("Final solution:")
     printResults(s, occupiedRanges)
