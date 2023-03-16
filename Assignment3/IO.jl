@@ -58,7 +58,6 @@ end
 
 function printResults(s, occupiedRanges)
     println()
-    println("Final solution: ")
     for i in eachindex(s)
         println("Processor ", i, ": ", s[i])
     end
@@ -67,4 +66,6 @@ function printResults(s, occupiedRanges)
     for i in eachindex(occupiedRanges)
         println("Job ", i, ": ", occupiedRanges[i])        
     end
+    println("Objective: ", cost(s))
 end
+

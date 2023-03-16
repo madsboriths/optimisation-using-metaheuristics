@@ -29,50 +29,60 @@ function init(n_jobs, n_processors, UB, duration, processor)
     return s, occupiedRanges
 end
 
-function randomStep(s, occupiedRanges, n_jobs, n_processors, duration, processor)
-    s, occupiedRanges = compress(s, occupiedRanges, n_jobs, n_processors, duration, processor)
+function randomStep(s, occupiedRanges, duration, k)
+    for i in 1:k
+        println("BEFORE: ")
+        printResults(s, occupiedRanges)
+        randomProcIdx = rand(1:length(s))
+        randomElementIdx = rand(1:length(s[randomProcIdx]))
+        removedElement = removeElement(s, occupiedRanges, randomProcIdx, randomElementIdx)
+        println("REMOVED: ", removedElement)
+        s, occupiedRanges = compress(s, occupiedRanges, duration, i)
+
+        println("AFTER:")
+        printResults(s, occupiedRanges)
+    end
     return s, occupiedRanges
 end
 
-function compress(s, occupiedRanges, n_jobs, n_processors, duration, processor)
+function compress(s, occupiedRanges, duration, procNum)
     s = deepcopy(s)
     occupiedRanges = deepcopy(occupiedRanges)
-    for processor in s
-        for i in eachindex(processor)
-            element = processor[i]
-            job = element[1]
-            operation = element[2]
-            startTime = element[3]
-            endTime = element[4]
-            
-            newStartTime = 0
+    processor = s[procNum]
+    for i in eachindex(processor)
+        element = processor[i]
+        job = element[1]
+        operation = element[2]
+        startTime = element[3]
+        endTime = element[4]
+        
+        newStartTime = 0
+        newEndTime = newStartTime + duration[job, operation]
+        
+        if (i > 1)
+            newStartTime = processor[i-1][4] + 1
             newEndTime = newStartTime + duration[job, operation]
-            
-            if (i > 1)
-                newStartTime = processor[i-1][4] + 1
+        end
+        
+        or = occupiedRanges[job]
+        occIdx = findfirst(x -> x == (startTime, endTime), or)
+        if (occIdx > 1)
+            if (or[occIdx-1][2] > newStartTime-1)
+                newStartTime = or[occIdx-1][2] + 1
                 newEndTime = newStartTime + duration[job, operation]
             end
-            
-            or = occupiedRanges[job]
-            occIdx = findfirst(x -> x == (startTime, endTime), or)
-            if (occIdx > 1)
-                if (or[occIdx-1][2] > newStartTime-1)
-                    newStartTime = or[occIdx-1][2] + 1
-                    newEndTime = newStartTime + duration[job, operation]
-                end
-            end
-
-            newTuple = (processor[i][1], processor[i][2], newStartTime, newEndTime)
-            processor[i] = newTuple
-            
-            # println()
-            # println("Occ: ", or)
-            # println(processor)
-            # println(startTime, " ", endTime)
-            # println(newStartTime, " ", newEndTime)
-            # println("newStart: ", newStartTime)
         end
-    end    
+
+        newTuple = (processor[i][1], processor[i][2], newStartTime, newEndTime)
+        processor[i] = newTuple
+        
+        # println()
+        # println("Occ: ", or)
+        # println(processor)
+        # println(startTime, " ", endTime)
+        # println(newStartTime, " ", newEndTime)
+        # println("newStart: ", newStartTime)
+    end
     return s, occupiedRanges 
 end
 
@@ -85,6 +95,12 @@ function removeElement(s, occupiedRanges, proc, index)
 
     occIdx = findfirst(x -> x == (startTime, endTime), occupiedRanges[job])
     deleteat!(occupiedRanges[job], occIdx)
+    return processor[index]
+end
+
+# Should reinsert the job that has ben removed
+function insertElement(s, occupiedRanges, job, operation)
+    
 end
 
 function insertElementSort(ranges, element)
