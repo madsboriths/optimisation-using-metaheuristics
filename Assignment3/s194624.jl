@@ -2,7 +2,7 @@
 using Random
 
 include("IO.jl")
-include("ConstructionHeuristic.jl")
+include("Solver.jl")
 
 struct ArgumentException <: Exception
     message::String
@@ -14,7 +14,7 @@ function main()
     maxTimeAllowed = parse(Int, ARGS[3])
 
     n_jobs, n_processors, UB, duration, processor = read_instance(instanceLocation)
-
+    
     printInstance(n_jobs, n_processors, UB, duration, processor)
 
     println("Finding initial solution...")
@@ -24,26 +24,25 @@ function main()
     #TODO Find initial temperature setting
     T = 100
     alpha = 0.99
-
+    
     elapsedTime = 0
     start = time_ns()
     iterations = 0
-    while (!terminate(elapsedTime, maxTimeAllowed))
+    while (!terminate(elapsedTime, maxTimeAllowed) && iterations < 1)
 
-        #TODO
-        #sMark = randomStep(s, occupiedRanges)
-        sMark = copy(s)
-
+        sMark, occupiedRangesMark = randomStep(s, occupiedRanges, n_jobs, n_processors, duration, processor)
+        
         #TODO Implement delta-evaluation
         delta = Float64(cost(sMark) - cost(s))
 
         if (delta < 0 || rand() < exp(-(delta/T)))
             s = sMark
+            occupiedRanges = occupiedRangesMark
         end
 
         #TODO Determine temperature decay
         T = T * alpha
-
+        
         elapsedTime = round((time_ns()-start)/1e9,digits=3)
         iterations += 1
     end
