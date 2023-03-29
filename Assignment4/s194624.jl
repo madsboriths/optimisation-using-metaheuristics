@@ -25,7 +25,7 @@ function main()
     end
     println("k: ", k)
 
-    diversifyFrequency = totalTime / 20
+    diversifyFrequency = 1
 
     println("Running instance: ", name)
     println(string("Upper bound: ", UB))
@@ -55,7 +55,8 @@ function main()
 
     noLegalNeighbors = true
 
-    updates = 0
+    updates = 1
+    shuffleFrequency = 10
     switch = 0
     
     lastUpdateTime = elapsedTime
@@ -75,27 +76,20 @@ function main()
         end
 
         if (noLegalNeighbors || (elapsedTime - lastUpdateTime) > diversifyFrequency) 
-            if (switch % 2 == 0)
-                # Diversification
-                swaps = Int(round(dim/2))
-                for i in 1:swaps
-                    edgeA, edgeB = getRandomEdgePair(dim)
-                    s, objectiveValue = twoOpt(s, objectiveValue, edgeA, edgeB, dist)
-                end
-                s = makeFeasible(s, dist)
-                updates += 1
-            else 
-                # Intensification
-                nextSolutionIdx = Int(round(k/2))
-                if (nextSolutionIdx == 0)
-                    nextSolutionIdx = 1
-                end
-                s = visitedSolutions[nextSolutionIdx]
-                updates += 1
+            # Diversification
+            swaps = Int(ceil(dim/2))
+            for i in 1:swaps
+                edgeA, edgeB = getRandomEdgePair(dim)
+                s, objectiveValue = twoOpt(s, objectiveValue, edgeA, edgeB, dist)
             end
-            if (updates % 5 == 0)
-                switch += 1
+
+            if (updates % shuffleFrequency == 0)
+                println("Shuffling!")
+                shuffle!(s)
             end
+
+            updates += 1
+            s = makeFeasible(s, dist)
             objectiveValue = getObjectiveValue(s, dist)
             lastUpdateTime = elapsedTime
         end
