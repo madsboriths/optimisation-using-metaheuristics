@@ -84,7 +84,6 @@ function main()
             end
 
             if (updates % shuffleFrequency == 0)
-                println("Shuffling!")
                 shuffle!(s)
             end
 
