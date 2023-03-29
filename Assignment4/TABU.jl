@@ -57,25 +57,10 @@ function getObjectiveValue(solution, dist)
     return val
 end
 
-function legalPair(n, m, previousMove)
+function legalPair(n, m)
     if (abs(n-m) < 2) 
         return false
     end 
-
-    # if (previousMove[1] == n && previousMove[2] == m ||
-    #     previousMove[1] == m && previousMove[2] == n)
-    #     return false
-    # end
-
-    # if (previousMove[1] == n || previousMove[2] == m ||
-    #     previousMove[1] == m || previousMove[2] == n)
-    #     return false
-    # end
-
-    ## Relevant special case if the path was cyclic
-    #if (n == 1 && m == dim-1) 
-    #    return false
-    #end
 
     return true
 end
@@ -141,30 +126,32 @@ function beenVisited(OGSolution, previousMoves, dist)
     end
 end
 
-function BestNonTABU(originalSolution, originalObjectiveValue, dim, dist, visitedSolutions, previousMove)   
+function BestNonTABU(originalSolution, originalObjectiveValue, dim, dist, visitedSolutions)   
     s = copy(originalSolution)
     objectiveValue = copy(originalObjectiveValue)
-    newPreviousMove = previousMove
+    noLegalNeighbors = true
     for i in 1:dim-1
         for j in i:dim-1
-            if(legalPair(i, j, previousMove))
+            if(legalPair(i, j))
                 newSolution, newObjectiveValue = twoOpt(originalSolution, originalObjectiveValue, i, j, dist)
-                if (isLegal(newSolution, dist) && newObjectiveValue < objectiveValue  && !solutionVisited(newSolution, visitedSolutions))
-                    s = newSolution
-                    objectiveValue = newObjectiveValue
-                    newPreviousMove = (i, j)
+                if (isLegal(newSolution, dist) && !solutionVisited(newSolution, visitedSolutions))
+                    if (noLegalNeighbors || newObjectiveValue < objectiveValue)
+                        s = newSolution
+                        objectiveValue = newObjectiveValue
+                    end
+                    noLegalNeighbors = false
                 end
             end
         end
     end
-    return s, objectiveValue, newPreviousMove
+    return s, objectiveValue, noLegalNeighbors
 end
 
 function getRandomEdgePair(dim)
-    edgeA = rand(1:dim-1)
-    temp = rand(2:dim-3)
-    edgeB = ((edgeA + (temp))%(dim-1))+1
-
+    population = [i for i in 1:dim-1]
+    edgeA = population[rand(1:length(population))]
+    filter!(x -> abs(edgeA - x) > 2, population)
+    edgeB = population[rand(1:length(population))]
     if (edgeB < edgeA) 
         edgeA, edgeB = edgeB, edgeA
     end
@@ -174,7 +161,7 @@ end
 function visitSolution(visitedSolutions, s, k)
     n = length(visitedSolutions)
     if (n == k)
-        deleteat!(visitedSolutions, length(visitedSolutions))
+        deleteat!(visitedSolutions, 1)
     end
     push!(visitedSolutions, s)
 end

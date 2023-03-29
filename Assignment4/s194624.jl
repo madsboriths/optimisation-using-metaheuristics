@@ -13,30 +13,22 @@ function main()
     totalTime = parse(Int, ARGS[3])
     
     name, UB, dim, dist = read_instance(instanceLocation)
-    k = dim/4
+    
+    println("Dimension: ", dim)
+    k = Int(round(dim/4))
+
+    if (k == 0)
+        k = 1
+    end
+    if (length(ARGS) > 3)
+        k = parse(Int, ARGS[4])
+    end
+    println("k: ", k)
+
+    diversifyFrequency = totalTime / 20
 
     println("Running instance: ", name)
     println(string("Upper bound: ", UB))
-
-    # Default
-    pertubationMode = "DB/2Opt"
-    twoOptMode = "first"
-
-    # Read 2Opt improvement mode
-    if (length(ARGS) > 3)
-        twoOptMode = ARGS[4]
-        if (!(ARGS[4] == "first" || ARGS[4] == "best"))
-            throw(ArgumentException(string("illegal argument: ", ARGS[4])))
-        end
-    end
-
-    # Read pertubation mode
-    if (length(ARGS) > 4)
-        pertubationMode = ARGS[5]
-        if (!(ARGS[5] == "shuffle" || ARGS[5] == "2Opt" || ARGS[5] == "DB" || ARGS[5] == "DB/2Opt"))
-            throw(ArgumentException(string("illegal argument: ", ARGS[5])))
-        end
-    end
 
     if (ARGS[2] == " ")
         vals = rsplit(name, ".", limit=2)
@@ -55,33 +47,55 @@ function main()
     # Perform iterated local search 
     println("Allowed time: ", totalTime, " seconds")
 
-    bestS = copy(s)
-    bestObjective = objectiveValue
+    bestSolution = copy(s)
+    bestObjectiveValue = objectiveValue
 
     previousMove = (-1,-1)
     visitedSolutions = [s]
+
+    noLegalNeighbors = true
+
+    updates = 0
+    switch = 0
     
     lastUpdateTime = elapsedTime
     start = time_ns()
     while (elapsedTime < totalTime)
-        newSolution, newObjectiveValue, previousMove = BestNonTABU(s, objectiveValue, dim, dist, visitedSolutions, previousMove)
 
-        visitSolution(visitedSolutions, newSolution, k)
-        if (newObjectiveValue < bestObjective)
-            bestS = copy(newSolution)
-            bestObjective = newObjectiveValue
-
-            s = newSolution
-            objectiveValue = newObjectiveValue
-
-            println("Better solution found: ", bestObjective, " time: ", elapsedTime)
+        s, objectiveValue, noLegalNeighbors = BestNonTABU(s, objectiveValue, dim, dist, visitedSolutions)
+        visitSolution(visitedSolutions, s, k)
+        if (objectiveValue < bestObjectiveValue)
+            bestSolution = copy(s)
+            bestObjectiveValue = objectiveValue
+            println()
+            println("Time: ", elapsedTime, " seconds")
+            println("New best: ", bestObjectiveValue)
+            println("Upper bound: ", UB)
             lastUpdateTime = elapsedTime
         end
 
-        if ((elapsedTime - lastUpdateTime) > totalTime / 5) 
-            println("Diversification")
-            shuffle!(s)
-            makeFeasible(s, dist)
+        if (noLegalNeighbors || (elapsedTime - lastUpdateTime) > diversifyFrequency) 
+            if (switch % 2 == 0)
+                # Diversification
+                swaps = Int(round(dim/2))
+                for i in 1:swaps
+                    edgeA, edgeB = getRandomEdgePair(dim)
+                    s, objectiveValue = twoOpt(s, objectiveValue, edgeA, edgeB, dist)
+                end
+                s = makeFeasible(s, dist)
+                updates += 1
+            else 
+                # Intensification
+                nextSolutionIdx = Int(round(k/2))
+                if (nextSolutionIdx == 0)
+                    nextSolutionIdx = 1
+                end
+                s = visitedSolutions[nextSolutionIdx]
+                updates += 1
+            end
+            if (updates % 5 == 0)
+                switch += 1
+            end
             objectiveValue = getObjectiveValue(s, dist)
             lastUpdateTime = elapsedTime
         end
@@ -92,9 +106,9 @@ function main()
 
     println("\nSearch completed.")
     println(string(iterations, " total iterations"))
-    println(string("Final objective value: ", bestObjective))
+    println(string("Final objective value: ", bestObjectiveValue))
     println(string("Upper bound: ", UB))
 
-    writeSolution(s, solutionLocation)
+    writeSolution(bestSolution, solutionLocation)
 end
 main()
