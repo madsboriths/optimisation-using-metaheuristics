@@ -76,4 +76,5 @@ function main()
     output = run(Cmd(["./POChecker.exe", instanceLocation, solutionLocation]))
     println(output)
 end
+
 main()
