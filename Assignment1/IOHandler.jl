@@ -40,7 +40,7 @@ function writeSolution(solution, solutionLocation)
     end
     
     open(string(wDir, "/", solutionLocation), "w") do f
-        for i in eachindex(solution)
+        for i in eachindex(solution) 
             write(f, string(solution[i]-1, " "))
         end
     end    
